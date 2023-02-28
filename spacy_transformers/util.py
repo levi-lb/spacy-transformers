@@ -30,6 +30,13 @@ def huggingface_from_pretrained(source: Union[Path, str], config: Dict):
         str_path = source
     tokenizer = AutoTokenizer.from_pretrained(str_path, **config)
     transformer = AutoModel.from_pretrained(str_path)
+    import torch
+    qconfig_dict = {
+        torch.nn.EmbeddingBag: torch.quantization.float_qparams_weight_only_qconfig,
+        torch.nn.Linear: torch.quantization.default_dynamic_qconfig
+    }
+
+    transformer = torch.quantization.quantize_dynamic(transformer, qconfig_dict)
     ops = get_current_ops()
     if isinstance(ops, CupyOps):
         transformer.cuda()
